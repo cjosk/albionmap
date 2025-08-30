@@ -61,34 +61,34 @@
     <script>
         // --- HARİTA AYARLARI ---
 
-        // Leaflet'in coğrafi olmayan haritalar için basit koordinat sistemini kullanıyoruz.
+        // GitHub'daki klasör yapısına göre zoom seviyelerini ayarlıyoruz.
         const map = L.map('map', {
             crs: L.CRS.Simple,
-            minZoom: 4,
-            maxZoom: 4,
+            minZoom: 2,
+            maxZoom: 4, // GitHub'da en yüksek seviye 4
             zoomControl: true 
         });
 
+        // Görüntünün piksel boyutları (max zoom'a göre)
         const imageWidth = 4096;
         const imageHeight = 4096;
-        
         const bounds = [[0, 0], [imageHeight, imageWidth]];
 
-        // Döşeme katmanını (Tile Layer) oluşturuyoruz.
-        const tileLayer = L.tileLayer('maptiles/map_{x}_{y}.png', {
-            bounds: bounds,
-            // tms: true, // BU SATIR KALDIRILDI! Dosya adlarınız standart Y ekseni kullandığı için bu ayar hatalı koordinatlara yol açıyordu.
-            noWrap: true // Haritanın yatayda tekrarlanmasını engeller
+        // DÖŞEME KATMANI (TILE LAYER) - DÜZELTİLMİŞ KISIM
+        // Yol artık GitHub'daki klasör yapısıyla uyumlu: maptiles/{z}/{x}_{y}.png
+        const tileLayer = L.tileLayer('maptiles/{z}/{x}_{y}.png', {
+            noWrap: true, // Haritanın yatayda tekrarlanmasını engeller
+            tms: true, // Albion haritaları için genellikle bu gereklidir
         });
 
         tileLayer.on('tileerror', function(error, tile) {
-            console.error('Harita parçası yüklenemedi. Dosya yolu doğru mu?:', error.tile.src);
+            console.error('Harita parçası yüklenemedi. Yol doğru mu?:', error.tile.src);
         });
 
         tileLayer.addTo(map);
         
-        // Haritanın merkezini ve başlangıç zoom seviyesini ayarlıyoruz.
-        map.setView([2048, 2048], 4);
+        // Haritayı ortalayarak ve iyi bir başlangıç zoom seviyesiyle başlatıyoruz.
+        map.setView([2048, 2048], 2);
         
         // Kullanıcının harita sınırları dışına çıkmasını engelliyoruz.
         map.setMaxBounds(bounds);
@@ -98,7 +98,7 @@
 
         // Sığınaklarınız (Hideouts) için özel bir ikon oluşturalım.
         const hideoutIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjM2E5OWQ0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwIDIwdi02aDR2Nmg1di04aDNMMTIgM2wtOSA5aDN2OGg1eiIvPjwvc3ZnPg==', // Mavi ev ikonu (Base64 SVG)
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjM2E5OWQ0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwIDIwdi02aDR2Nmg1di04aDNMMTIgM2wtOSA5aDN2OGg1eiIvPjwvc3ZnPg==',
             iconSize: [32, 32],
             iconAnchor: [16, 32],
             popupAnchor: [0, -32]
@@ -106,7 +106,7 @@
 
         // Bölgeleriniz (Territories) için özel bir ikon oluşturalım.
         const territoryIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE3LjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS44MiAyMiIvPjwvc3ZnPg==', // Turuncu yıldız ikonu (Base64 SVG)
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE3LjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS$.4YyAyMiIvPjwvc3ZnPg==',
             iconSize: [32, 32],
             iconAnchor: [16, 16],
             popupAnchor: [0, -16]
@@ -114,12 +114,9 @@
 
 
         // Loncanızın sığınaklarının listesi.
-        // `coords`: Harita üzerindeki [y, x] koordinatı.
-        // `name`: İkonun üzerine tıklandığında görünecek başlık.
-        // `description`: Açıklama metni.
         const myHideouts = [
             {
-                coords: [2100, 2200], // Örnek koordinat. Doğrusunu haritaya tıklayarak konsoldan öğrenin!
+                coords: [2100, 2200], // Örnek koordinat
                 name: "InTheEnd",
                 description: "T8 Hideout"
             }
@@ -130,41 +127,31 @@
             {
                 coords: [2350, 2050], // Örnek koordinat
                 name: "Yeşilvadi Çiftliği",
-                description: "T5 Fiber Bölgesi. Saatlik üretim: 500 Siphoned Energy."
-            },
-            {
-                coords: [850, 1250], // Örnek koordinat
-                name: "Kuzey Gözcü Kulesi",
-                description: "T8 Maden Bölgesi. Saatlik üretim: 1200 Siphoned Energy."
+                description: "T5 Fiber Bölgesi"
             }
         ];
 
 
         // --- İKONLARI HARİTAYA EKLEME ---
 
-        // Katman grupları oluşturuyoruz. Bu sayede kullanıcı ikonları açıp kapatabilir.
         const hideoutLayer = L.layerGroup();
         const territoryLayer = L.layerGroup();
 
-        // Sığınakları haritaya ekle
         myHideouts.forEach(ho => {
             L.marker(ho.coords, {icon: hideoutIcon})
              .bindPopup(`<b>${ho.name}</b><br>${ho.description}`)
              .addTo(hideoutLayer);
         });
 
-        // Bölgeleri haritaya ekle
         myTerritories.forEach(terry => {
             L.marker(terry.coords, {icon: territoryIcon})
              .bindPopup(`<b>${terry.name}</b><br>${terry.description}`)
              .addTo(territoryLayer);
         });
         
-        // Katmanları varsayılan olarak haritaya ekliyoruz.
         hideoutLayer.addTo(map);
         territoryLayer.addTo(map);
 
-        // Kullanıcının haritada neleri göreceğini seçebileceği kontrol kutusu
         const overlayMaps = {
             "Sığınaklar (Hideouts)": hideoutLayer,
             "Bölgeler (Territories)": territoryLayer
@@ -172,9 +159,8 @@
 
         L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 
-        // Haritada bir yere tıklandığında koordinatları konsola yazdırma (opsiyonel, koordinat bulmak için faydalı)
         map.on('click', function(e) {
-            console.log("Harita Koordinatı: [" + e.latlng.lat + ", " + e.latlng.lng + "]");
+            console.log(`Koordinat: [${Math.round(e.latlng.lat)}, ${Math.round(e.latlng.lng)}]`);
         });
 
     </script>
