@@ -86,8 +86,8 @@
 
         mapLayer.addTo(map);
 
-        // Haritayı, eklenen tüm parçaları gösterecek şekilde ortala ve zoom yap
-        map.fitBounds([ [5*tileSize, 3*tileSize], [10*tileSize, 9*tileSize] ]);
+        // Haritayı ortala ve başlangıç zoom seviyesini ayarla (daha uzak bir görünüm için)
+        map.setView([1920, 1536], 2);
 
 
         // --- VERİ GİRİŞİ (BURAYI KENDİNİZE GÖRE DÜZENLEYİN) ---
@@ -96,7 +96,7 @@
             iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
         });
         const territoryIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE3LjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS44MiAyMiIvPjwvc3ZnPg==',
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE seventLjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS44MiAyMiIvPjwvc3ZnPg==',
             iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16]
         });
         const myHideouts = [{ coords: [1500, 1500], name: "InTheEnd", description: "T8 Hideout" }];
