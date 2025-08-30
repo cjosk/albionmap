@@ -64,36 +64,34 @@
         // Leaflet'in coğrafi olmayan haritalar için basit koordinat sistemini kullanıyoruz.
         const map = L.map('map', {
             crs: L.CRS.Simple,
-            minZoom: 0, // Haritadan ne kadar uzaklaşılabileceği
-            maxZoom: 4,  // Ne kadar yaklaşılabileceği
-            zoomControl: true // Sağ alttaki + / - butonları
+            minZoom: 4,
+            maxZoom: 4,
+            zoomControl: true 
         });
 
-        // Harita döşemelerinin (tiles) toplam boyutları. Bu, koordinat sistemi için gereklidir.
         const imageWidth = 4096;
         const imageHeight = 4096;
         
-        // Harita görselinin sınırlarını belirliyoruz. Sol üst köşe [0,0], sağ alt köşe [width, height].
-        // Leaflet koordinatları [y, x] formatında bekler, bu yüzden [imageHeight, imageWidth] kullanıyoruz.
         const bounds = [[0, 0], [imageHeight, imageWidth]];
 
         // Döşeme katmanını (Tile Layer) oluşturuyoruz.
-        const tileLayer = L.tileLayer('maptiles/{z}/map_{x}_{y}.png', {
-            bounds: bounds, // Haritanın sınırları dışına çıkmayı engeller
-            tms: true, // Albion haritası gibi "Ters Y Ekseni" kullanan sistemler için gereklidir
+        const tileLayer = L.tileLayer('maptiles/map_{x}_{y}.png', {
+            bounds: bounds,
+            // tms: true, // BU SATIR KALDIRILDI! Dosya adlarınız standart Y ekseni kullandığı için bu ayar hatalı koordinatlara yol açıyordu.
             noWrap: true // Haritanın yatayda tekrarlanmasını engeller
         });
 
-        // Hata ayıklama için: Eğer bir harita parçası yüklenemezse konsola hata yazdır.
-        // Eğer harita gri ise, F12 ile konsolu açıp buradaki hataları kontrol edin.
         tileLayer.on('tileerror', function(error, tile) {
             console.error('Harita parçası yüklenemedi. Dosya yolu doğru mu?:', error.tile.src);
         });
 
         tileLayer.addTo(map);
-
-        // Haritanın başlangıçta tüm görseli gösterecek şekilde ayarlanması.
-        map.fitBounds(bounds);
+        
+        // Haritanın merkezini ve başlangıç zoom seviyesini ayarlıyoruz.
+        map.setView([2048, 2048], 4);
+        
+        // Kullanıcının harita sınırları dışına çıkmasını engelliyoruz.
+        map.setMaxBounds(bounds);
 
 
         // --- VERİ GİRİŞİ (BURAYI KENDİNİZE GÖRE DÜZENLEYİN) ---
@@ -121,14 +119,9 @@
         // `description`: Açıklama metni.
         const myHideouts = [
             {
-                coords: [2100, 2200], // Örnek koordinat (Lymhurst yakını)
-                name: "Merkez Sığınak",
-                description: "T7 Kalite. Tüm üretim istasyonları mevcut."
-            },
-            {
-                coords: [1500, 3100], // Örnek koordinat (Black Zone)
-                name: "Kara Vadi Sığınağı",
-                description: "T6 Kalite. Stratejik konumda."
+                coords: [2100, 2200], // Örnek koordinat. Doğrusunu haritaya tıklayarak konsoldan öğrenin!
+                name: "InTheEnd",
+                description: "T8 Hideout"
             }
         ];
 
