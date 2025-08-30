@@ -78,12 +78,19 @@
         const bounds = [[0, 0], [imageHeight, imageWidth]];
 
         // Döşeme katmanını (Tile Layer) oluşturuyoruz.
-        // Bu yapı, GitHub projesindeki dosya yapısıyla uyumlu olmalıdır.
-        L.tileLayer('maptiles/{z}/map_{x}_{y}.png', {
+        const tileLayer = L.tileLayer('maptiles/{z}/map_{x}_{y}.png', {
             bounds: bounds, // Haritanın sınırları dışına çıkmayı engeller
             tms: true, // Albion haritası gibi "Ters Y Ekseni" kullanan sistemler için gereklidir
             noWrap: true // Haritanın yatayda tekrarlanmasını engeller
-        }).addTo(map);
+        });
+
+        // Hata ayıklama için: Eğer bir harita parçası yüklenemezse konsola hata yazdır.
+        // Eğer harita gri ise, F12 ile konsolu açıp buradaki hataları kontrol edin.
+        tileLayer.on('tileerror', function(error, tile) {
+            console.error('Harita parçası yüklenemedi. Dosya yolu doğru mu?:', error.tile.src);
+        });
+
+        tileLayer.addTo(map);
 
         // Haritanın başlangıçta tüm görseli gösterecek şekilde ayarlanması.
         map.fitBounds(bounds);
@@ -180,6 +187,4 @@
     </script>
 </body>
 </html>
-
-
 
