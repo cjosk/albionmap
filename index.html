@@ -14,155 +14,103 @@
      crossorigin=""></script>
 
     <style>
-        /* Sayfanın tamamını kaplaması için temel stiller */
         html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a1a; /* Harita arkasındaki koyu renk */
+            height: 100%; margin: 0; padding: 0;
+            background-color: #1a1a1a;
             font-family: Arial, sans-serif;
         }
-        /* Harita konteynerinin stilini belirleme */
         #map {
-            width: 100%;
-            height: 100%;
-            background-color: #333; /* Harita yüklenirken görünecek renk */
+            width: 100%; height: 100%;
+            background-color: #333;
         }
-        /* Leaflet pop-up pencerelerinin daha okunaklı olması için stil */
-        .leaflet-popup-content-wrapper {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            border-radius: 8px;
-            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background-color: #2c3e50; color: #ecf0f1;
         }
-        .leaflet-popup-content {
-            font-size: 14px;
-        }
-        .leaflet-popup-tip {
-            background: #2c3e50;
-        }
-        .leaflet-popup-close-button {
-            color: #ecf0f1 !important;
-        }
-        /* Katman kontrol kutusunun stili */
+        .leaflet-popup-content { font-size: 14px; }
+        .leaflet-popup-close-button { color: #ecf0f1 !important; }
         .leaflet-control-layers {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            padding: 10px;
-            border-radius: 5px;
+            background-color: #2c3e50; color: #ecf0f1;
+            padding: 10px; border-radius: 5px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Haritanın gösterileceği HTML elementi -->
     <div id="map"></div>
 
     <script>
         // --- HARİTA AYARLARI ---
-
-        // GitHub'daki klasör yapısına göre zoom seviyelerini ayarlıyoruz.
         const map = L.map('map', {
             crs: L.CRS.Simple,
             minZoom: 2,
-            maxZoom: 4, // GitHub'da en yüksek seviye 4
-            zoomControl: true 
+            maxZoom: 5
         });
 
-        // Görüntünün piksel boyutları (max zoom'a göre)
-        const imageWidth = 4096;
-        const imageHeight = 4096;
-        const bounds = [[0, 0], [imageHeight, imageWidth]];
+        // --- YENİ YAKLAŞIM: HARİTA PARÇALARINI MANUEL YERLEŞTİRME ---
 
-        // DÖŞEME KATMANI (TILE LAYER) - DÜZELTİLMİŞ KISIM
-        // Yol artık GitHub'daki klasör yapısıyla uyumlu: maptiles/{z}/{x}_{y}.png
-        const tileLayer = L.tileLayer('maptiles/{z}/{x}_{y}.png', {
-            noWrap: true, // Haritanın yatayda tekrarlanmasını engeller
-            tms: true, // Albion haritaları için genellikle bu gereklidir
+        // Ekran görüntüsünde görünen ve maptiles klasörünüzde olan tüm dosyaların listesi.
+        // Eğer eksik veya fazla varsa bu listeyi güncelleyebilirsiniz.
+        const tileFiles = [
+            'map_3_6.png', 'map_3_7.png', 'map_3_8.png', 'map_3_9.png',
+            'map_4_5.png', 'map_4_6.png', 'map_4_7.png', 'map_4_8.png', 'map_4_9.png',
+            'map_5_5.png', 'map_5_6.png', 'map_5_7.png', 'map_5_8.png', 'map_5_9.png',
+            'map_6_5.png', 'map_6_6.png', 'map_6_7.png', 'map_6_8.png', 'map_6_9.png',
+            'map_7_5.png', 'map_7_6.png', 'map_7_7.png', 'map_7_8.png', 'map_7_9.png',
+            'map_8_5.png', 'map_8_6.png', 'map_8_7.png', 'map_8_8.png', 'map_8_9.png'
+            // 'map_6_8 (1).png' dosyasını 'map_6_8.png' olarak varsaydım.
+        ];
+
+        const tileSize = 256; // Her bir harita parçasının piksel boyutu
+        const mapLayer = L.layerGroup(); // Tüm parçaları bu katmana ekleyeceğiz
+
+        tileFiles.forEach(filename => {
+            // Dosya adından x ve y koordinatlarını çıkarıyoruz. Örn: "map_4_5.png" -> x=4, y=5
+            const parts = filename.replace('map_', '').replace('.png', '').split('_');
+            const x = parseInt(parts[0], 10);
+            const y = parseInt(parts[1], 10);
+
+            // Dosya adından koordinat çıkaramazsak bu adımı atla
+            if (isNaN(x) || isNaN(y)) {
+                console.error("Dosya adı anlaşılamadı:", filename);
+                return;
+            }
+
+            // Her bir parçanın haritadaki köşe koordinatlarını hesaplıyoruz
+            const topLeft = [y * tileSize, x * tileSize];
+            const bottomRight = [(y + 1) * tileSize, (x + 1) * tileSize];
+            const tileBounds = [topLeft, bottomRight];
+            
+            // Her bir harita parçasını bir resim katmanı olarak ekliyoruz
+            L.imageOverlay(`maptiles/${filename}`, tileBounds).addTo(mapLayer);
         });
 
-        tileLayer.on('tileerror', function(error, tile) {
-            console.error('Harita parçası yüklenemedi. Yol doğru mu?:', error.tile.src);
-        });
+        mapLayer.addTo(map);
 
-        tileLayer.addTo(map);
-        
-        // Haritayı ortalayarak ve iyi bir başlangıç zoom seviyesiyle başlatıyoruz.
-        map.setView([2048, 2048], 2);
-        
-        // Kullanıcının harita sınırları dışına çıkmasını engelliyoruz.
-        map.setMaxBounds(bounds);
+        // Haritayı, eklenen tüm parçaları gösterecek şekilde ortala ve zoom yap
+        map.fitBounds([ [5*tileSize, 3*tileSize], [10*tileSize, 9*tileSize] ]);
 
 
         // --- VERİ GİRİŞİ (BURAYI KENDİNİZE GÖRE DÜZENLEYİN) ---
-
-        // Sığınaklarınız (Hideouts) için özel bir ikon oluşturalım.
         const hideoutIcon = L.icon({
             iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjM2E5OWQ0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwIDIwdi02aDR2Nmg1di04aDNMMTIgM2wtOSA5aDN2OGg1eiIvPjwvc3ZnPg==',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
+            iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
         });
-
-        // Bölgeleriniz (Territories) için özel bir ikon oluşturalım.
         const territoryIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE3LjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS$.4YyAyMiIvPjwvc3ZnPg==',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-            popupAnchor: [0, -16]
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjZWM3NzRjIj48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEyIDE3LjI3TDE4LjE4IDIyIDE2LjU0IDE0LjgxIDEyIDEwLjMyIDcuNDYgMTQuODEgNS44MiAyMiIvPjwvc3ZnPg==',
+            iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16]
         });
-
-
-        // Loncanızın sığınaklarının listesi.
-        const myHideouts = [
-            {
-                coords: [2100, 2200], // Örnek koordinat
-                name: "InTheEnd",
-                description: "T8 Hideout"
-            }
-        ];
-
-        // Loncanızın bölgelerinin listesi.
-        const myTerritories = [
-            {
-                coords: [2350, 2050], // Örnek koordinat
-                name: "Yeşilvadi Çiftliği",
-                description: "T5 Fiber Bölgesi"
-            }
-        ];
-
+        const myHideouts = [{ coords: [1500, 1500], name: "InTheEnd", description: "T8 Hideout" }];
+        const myTerritories = [{ coords: [1800, 1800], name: "Yeşilvadi Çiftliği", description: "T5 Fiber Bölgesi" }];
 
         // --- İKONLARI HARİTAYA EKLEME ---
-
         const hideoutLayer = L.layerGroup();
         const territoryLayer = L.layerGroup();
-
-        myHideouts.forEach(ho => {
-            L.marker(ho.coords, {icon: hideoutIcon})
-             .bindPopup(`<b>${ho.name}</b><br>${ho.description}`)
-             .addTo(hideoutLayer);
-        });
-
-        myTerritories.forEach(terry => {
-            L.marker(terry.coords, {icon: territoryIcon})
-             .bindPopup(`<b>${terry.name}</b><br>${terry.description}`)
-             .addTo(territoryLayer);
-        });
-        
+        myHideouts.forEach(ho => { L.marker(ho.coords, {icon: hideoutIcon}).bindPopup(`<b>${ho.name}</b><br>${ho.description}`).addTo(hideoutLayer); });
+        myTerritories.forEach(terry => { L.marker(terry.coords, {icon: territoryIcon}).bindPopup(`<b>${terry.name}</b><br>${terry.description}`).addTo(territoryLayer); });
         hideoutLayer.addTo(map);
         territoryLayer.addTo(map);
-
-        const overlayMaps = {
-            "Sığınaklar (Hideouts)": hideoutLayer,
-            "Bölgeler (Territories)": territoryLayer
-        };
-
-        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
-
-        map.on('click', function(e) {
-            console.log(`Koordinat: [${Math.round(e.latlng.lat)}, ${Math.round(e.latlng.lng)}]`);
-        });
-
+        L.control.layers({ "Harita": mapLayer }, { "Sığınaklar": hideoutLayer, "Bölgeler": territoryLayer }, { collapsed: false }).addTo(map);
+        map.on('click', e => { console.log(`Koordinat: [${Math.round(e.latlng.lat)}, ${Math.round(e.latlng.lng)}]`); });
     </script>
 </body>
 </html>
